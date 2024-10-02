@@ -37,6 +37,7 @@ import (
 type BundleBuilder struct {
 	ctx               *cue.Context
 	files             []string
+	workspaceFiles    []string
 	mapSourceToOrigin map[string]string
 	injector          *RuntimeInjector
 }
@@ -116,13 +117,13 @@ func (b *BundleBuilder) InitWorkspace(workspace string, runtimeValues map[string
 		files = append(files, dstFile)
 	}
 
-	schemaFile := filepath.Join(workspace, fmt.Sprintf("%v.schema.cue", len(b.files)+1))
+	schemaFile := filepath.Join(workspace, fmt.Sprintf("%v.schema.cue", len(b.workspaceFiles)+1))
 	files = append(files, schemaFile)
 	if err := os.WriteFile(schemaFile, []byte(apiv1.BundleSchema), os.ModePerm); err != nil {
 		return err
 	}
 
-	b.files = files
+	b.workspaceFiles = files
 	return nil
 }
 
@@ -135,7 +136,7 @@ func (b *BundleBuilder) Build() (cue.Value, error) {
 		DataFiles: true,
 	}
 
-	ix := load.Instances(b.files, cfg)
+	ix := load.Instances(b.workspaceFiles, cfg)
 	if len(ix) == 0 {
 		return value, fmt.Errorf("no instances found")
 	}
